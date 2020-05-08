@@ -1,10 +1,29 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.core.paginator import Paginator
 from django.http import HttpResponse
 from .models import Task
 from .forms import taskForm
+from django.contrib import messages
+
 
 def tasklist (request):
-    tasks = Task.objects.all().order_by('-created_at')
+
+    search = request.GET.get('search')
+
+    if search:
+
+        tasks =  Task.objects.filter(title__icontains=search)
+
+    else:
+
+        tasks_list = Task.objects.all().order_by('-created_at')
+
+        paginator = Paginator(tasks_list, 7)
+
+        page = request.GET.get('page')
+
+        tasks = paginator.get_page(page)
+
     return render(request, 'tasks/list.html', {'tasks': tasks})
         
 
@@ -40,6 +59,14 @@ def editTask(request, id):
             return render(request, 'tasks/edittask.html', {'form': form, 'task':task})            
     else:
         return render(request, 'tasks/edittask.html', {'form': form, 'task':task})
+
+def deleteTask(request, id):
+    task = get_object_or_404(Task, pk=id)
+    task.delete()
+
+    messages.info(request, 'Serviço Deletado com Sucesso.')
+
+    return redirect('/')
 
 def helloword  (request):
     return HttpResponse('Olá mundo !')
